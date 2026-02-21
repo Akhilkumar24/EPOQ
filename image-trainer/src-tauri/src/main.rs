@@ -1,6 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod python_executor;
+use python_executor::{execute_python, IPCResponse};
+
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
 
@@ -78,6 +81,8 @@ async fn run_tabular_processor(
     let args_ref: Vec<&str> = args.iter().map(String::as_str).collect();
     run_python(&app, &args_ref).await
 }
+
+execute_python(&app, &args_ref).await
 
 /// Runs check_gpu.py and returns the stdout lines as a plain string.
 #[tauri::command]
