@@ -134,6 +134,30 @@ log_execution(&app, metadata).await.ok();
 result
 }
 
+#[tauri::command]
+async fn get_execution_history(app: tauri::AppHandle) -> Result<String, String> {
+    use std::fs;
+
+    let mut dir = app.path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?;
+
+    dir.push("logs");
+
+    let mut logs = Vec::new();
+
+    if dir.exists() {
+        for entry in fs::read_dir(dir).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let content = fs::read_to_string(entry.path())
+                .map_err(|e| e.to_string())?;
+            logs.push(content);
+        }
+    }
+
+    Ok(format!("[{}]", logs.join(",")))
+}
+
 /// Runs check_gpu.py and returns the stdout lines as a plain string.
 #[tauri::command]
 async fn run_check_gpu(app: tauri::AppHandle) -> Result<String, String> {
