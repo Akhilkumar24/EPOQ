@@ -16,14 +16,12 @@ struct ExecutionMetadata {
     output_path: Option<String>,
 }
 
-/// Tries to run `python` first, then `python3` as a fallback.
-/// Returns (stdout, stderr).
 async fn run_python(
     app: &tauri::AppHandle,
     args: &[&str],
 ) -> Result<String, String> {
-    // Try `python` first
-    let cmds = ["python", "python3"];
+    // Try `python` first, then alternatives including the Windows Python Launcher `py`
+    let cmds = ["python", "python3", "py"];
     let mut last_err = String::new();
 
     for cmd in cmds {
@@ -37,11 +35,22 @@ async fn run_python(
             Ok(output) => {
                 let stdout = String::from_utf8_lossy(&output.stdout).to_string();
                 let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-                if !output.status.success() && stdout.is_empty() {
-                    last_err = stderr;
+                
+                // If it succeeds, immediately return the standard output
+                if output.status.success() {
+                    return Ok(stdout);
+                } else {
+                    // Record error to return if ALL commands fail
+                    let msg = if !stderr.trim().is_empty() {
+                        stderr
+                    } else if !stdout.trim().is_empty() {
+                        stdout
+                    } else {
+                        format!("Exited with code: {}", output.status.code().unwrap_or(-1))
+                    };
+                    last_err = msg;
                     continue;
                 }
-                return Ok(stdout);
             }
             Err(e) => {
                 last_err = e.to_string();
@@ -97,7 +106,7 @@ async fn run_tabular_processor(
         .join("python_backend")
         .join("tabular_processor.py");
 
-    let script = script_path.to_string_lossy().to_string();
+    let script = script_path.to_string_lossy().to_string().replace("\\\\?\\", "");
 
     // Build args list
     let mut args: Vec<String> = vec![
@@ -168,7 +177,7 @@ async fn run_check_gpu(app: tauri::AppHandle) -> Result<String, String> {
         .join("python_backend")
         .join("check_gpu.py");
 
-    let script = script_path.to_string_lossy().to_string();
+    let script = script_path.to_string_lossy().to_string().replace("\\\\?\\", "");
 
  let result = run_python(&app, &[script.as_str()]).await;
 
@@ -188,6 +197,43 @@ match result {
     Ok(output) => Ok(output.trim().to_string()),
     Err(e) => Err(format!("GPU detection failed: {}", e)),
 }
+}
+/// Runs system_info.py and returns structured JSON string.
+#[tauri::command]
+async fn get_system_info(app: tauri::AppHandle) -> Result<String, String> {
+    let script_path = app
+        .path()
+        .resource_dir()
+        .map_err(|e| e.to_string())?
+        .join("python_backend")
+        .join("system_info.py");
+
+    let script = script_path.to_string_lossy().to_string().replace("\\\\?\\", "");
+
+    match run_python(&app, &[script.as_str()]).await {
+        Ok(output) => Ok(output.trim().to_string()),
+        Err(e) => Err(format!("System info failed: {}", e)),
+    }
+}
+
+#[tauri::command]
+async fn check_dependencies(app: tauri::AppHandle) -> Result<String, String> {
+    println!("DEBUG: Running backend check_dependencies");
+    let script = "import sys, json, importlib.util; p = lambda x: importlib.util.find_spec(x) is not None; print(json.dumps({'python': True, 'executable': sys.executable, 'version': sys.version.split()[0], 'pandas': p('pandas'), 'sklearn': p('sklearn'), 'torch': p('torch')}))";
+    match run_python(&app, &["-c", script]).await {
+        Ok(output) => {
+            println!("DEBUG: Python stdout: {}", output);
+            Ok(output.trim().to_string())
+        },
+        Err(e) => {
+            println!("DEBUG: Python error: {}", e);
+            let error_json = format!(
+                "{{\"python\": false, \"version\": null, \"pandas\": false, \"sklearn\": false, \"torch\": false, \"error\": \"{}\"}}",
+                e.replace("\"", "\\\"").replace("\n", " ")
+            );
+            Ok(error_json)
+        }
+    }
 }
 
 fn main() {

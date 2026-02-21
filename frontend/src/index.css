@@ -1,14 +1,25 @@
 @import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+@theme inline {
+  --color-background: var(--bg-dark);
+  --color-foreground: #ffffff;
+}
+
+:root {
+  --bg-dark: #000000;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-primary-blue: #2563EB;
-  --color-primary-blue-hover: #1D4ED8;
-  --font-family-inter: 'Inter', sans-serif;
-  --color-bg-page: #F8FAFC;
-  --color-bg-card: #FFFFFF;
-  --color-text-main: #1E293B;
-  --color-text-secondary: #64748B;
+  --color-primary-orange: #ea580c;
+  --color-primary-orange-hover: #c2410c;
+  --font-family-inter: "Inter", sans-serif;
+  --color-bg-page: #f8fafc;
+  --color-bg-card: #ffffff;
+  --color-text-main: #1e293b;
+  --color-text-secondary: #64748b;
 }
 
 body {
@@ -18,14 +29,14 @@ body {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #1E293B 0%, #2563EB 100%);
+  background: linear-gradient(135deg, #1e293b 0%, #ea580c 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .dark .gradient-text {
-  background: linear-gradient(135deg, #F8FAFC 0%, #60A5FA 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #fb923c 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -37,13 +48,17 @@ body {
 
 .feature-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
 .dark .feature-card:hover {
-  box-shadow: 0 10px 25px -5px rgba(255, 255, 255, 0.05), 0 8px 10px -6px rgba(255, 255, 255, 0.05);
+  box-shadow:
+    0 10px 25px -5px rgba(255, 255, 255, 0.05),
+    0 8px 10px -6px rgba(255, 255, 255, 0.05);
 }
 
 .code-block {
-  font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-family: "Menlo", "Monaco", "Courier New", monospace;
 }

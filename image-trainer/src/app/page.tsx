@@ -5,6 +5,7 @@ import { useState, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import GPUStatus from "./components/GPUStatus";
+import DependencyWizard from "./components/DependencyWizard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -340,6 +341,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<"trainer" | "data">("trainer");
   const [gpuOutput, setGpuOutput] = useState<string | null>(null);
   const [gpuLoading, setGpuLoading] = useState(false);
+  const [depsChecked, setDepsChecked] = useState(false);
 
   const checkGpu = useCallback(async () => {
     setGpuLoading(true);
@@ -354,8 +356,10 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 font-sans">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col py-12 px-8">
+    <>
+      {!depsChecked && <DependencyWizard onComplete={() => setDepsChecked(true)} />}
+      <div className={`flex min-h-screen items-center justify-center bg-zinc-950 font-sans ${!depsChecked ? 'opacity-0 h-0 overflow-hidden' : 'opacity-100 transition-opacity duration-1000'}`}>
+        <main className="flex min-h-screen w-full max-w-3xl flex-col py-12 px-8">
         {/* ── Header ── */}
         <header className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-3">
@@ -470,6 +474,7 @@ export default function Home() {
       {gpuOutput !== null && (
         <GpuModal output={gpuOutput} onClose={() => setGpuOutput(null)} />
       )}
-    </div>
+      </div>
+    </>
   );
 }
