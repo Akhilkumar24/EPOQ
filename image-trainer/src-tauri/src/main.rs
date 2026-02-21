@@ -3,6 +3,18 @@
 
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize)]
+struct ExecutionMetadata {
+    id: String,
+    timestamp: String,
+    action: String,
+    params: Option<String>,
+    status: String,
+    message: Option<String>,
+    output_path: Option<String>,
+}
 
 /// Tries to run `python` first, then `python3` as a fallback.
 /// Returns (stdout, stderr).
@@ -37,6 +49,35 @@ async fn run_python(
         }
     }
     Err(last_err)
+}
+
+async fn log_execution(
+    app: &tauri::AppHandle,
+    metadata: ExecutionMetadata,
+) -> Result<(), String> {
+    use std::fs;
+    use std::path::PathBuf;
+
+    let mut dir = app.path()
+        .app_data_dir()
+        .map_err(|e| e.to_string())?;
+
+    dir.push("logs");
+
+    if !dir.exists() {
+        fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    }
+
+    let mut file_path = PathBuf::from(dir);
+    file_path.push(format!("{}.json", metadata.id));
+
+    let content = serde_json::to_string_pretty(&metadata)
+        .map_err(|e| e.to_string())?;
+
+    fs::write(file_path, content)
+        .map_err(|e| e.to_string())?;
+
+    Ok(())
 }
 
 /// Runs tabular_processor.py with the given action, file, and optional params.
@@ -76,7 +117,21 @@ async fn run_tabular_processor(
     }
 
     let args_ref: Vec<&str> = args.iter().map(String::as_str).collect();
-    run_python(&app, &args_ref).await
+   let result = run_python(&app, &args_ref).await;
+
+let metadata = ExecutionMetadata {
+    id: format!("run_{}", chrono::Utc::now().timestamp()),
+    timestamp: chrono::Utc::now().to_rfc3339(),
+    action: action.clone(),
+    params,
+    status: if result.is_ok() { "success".into() } else { "error".into() },
+    message: result.clone().err(),
+    output_path: out,
+};
+
+log_execution(&app, metadata).await.ok();
+
+result
 }
 
 /// Runs check_gpu.py and returns the stdout lines as a plain string.
