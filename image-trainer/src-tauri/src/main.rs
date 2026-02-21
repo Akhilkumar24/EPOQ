@@ -146,10 +146,24 @@ async fn run_check_gpu(app: tauri::AppHandle) -> Result<String, String> {
 
     let script = script_path.to_string_lossy().to_string();
 
-    match run_python(&app, &[script.as_str()]).await {
-        Ok(output) => Ok(output.trim().to_string()), // remove extra newline
-        Err(e) => Err(format!("GPU detection failed: {}", e)),
-    }
+ let result = run_python(&app, &[script.as_str()]).await;
+
+let metadata = ExecutionMetadata {
+    id: format!("gpu_{}", chrono::Utc::now().timestamp()),
+    timestamp: chrono::Utc::now().to_rfc3339(),
+    action: "gpu_check".into(),
+    params: None,
+    status: if result.is_ok() { "success".into() } else { "error".into() },
+    message: result.clone().err(),
+    output_path: None,
+};
+
+log_execution(&app, metadata).await.ok();
+
+match result {
+    Ok(output) => Ok(output.trim().to_string()),
+    Err(e) => Err(format!("GPU detection failed: {}", e)),
+}
 }
 
 fn main() {
