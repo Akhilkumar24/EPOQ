@@ -195,10 +195,11 @@ fn main() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .invoke_handler(tauri::generate_handler![
-            run_tabular_processor,
-            run_check_gpu
-        ])
+       .invoke_handler(tauri::generate_handler![
+    run_tabular_processor,
+    run_check_gpu,
+    get_execution_history
+])
         .setup(|app| {
             let window = app.get_webview_window("main").unwrap();
             let icon = tauri::include_image!("icons/icon.png");
