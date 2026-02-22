@@ -9,15 +9,7 @@
     "frontendDist": "../out"
   },
 
-  config = {
-    "model": model_name,
-    "epochs": epochs,
-    "batch_size": batch_size,
-    "dataset_path": dataset_path,
-    "timestamp": timestamp,
-}
-with open(os.path.join(run_dir, "config.json"), "w") as f:
-    json.dump(config, f, indent=4)
+ 
   "app": {
     "windows": [
       {
