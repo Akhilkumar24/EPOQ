@@ -4,6 +4,9 @@ import time
 import argparse
 import os
 import subprocess
+import os
+import json
+from datetime import datetime
 
 def _install_missing(module_name, pip_name=None):
     if pip_name is None:
@@ -141,6 +144,13 @@ def main():
         dataloaders['train'] = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
         dataset_sizes['train'] = len(train_dataset)
         class_names = train_dataset.classes
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+run_id = f"run_{timestamp}"
+
+base_dir = os.path.join(os.getcwd(), "experiments")
+run_dir = os.path.join(base_dir, run_id)
+
+os.makedirs(run_dir, exist_ok=True)
         
         # Val
         if os.path.isdir(val_dir):
